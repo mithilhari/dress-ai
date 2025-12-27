@@ -1,4 +1,5 @@
-google
+flask
+google-genai
 pillow
 python-dotenv
 
