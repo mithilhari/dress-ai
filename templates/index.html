@@ -2,110 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dress AI | Virtual Stylist</title>
+    <title>Dress AI | Fashion Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
-        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
-    </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 min-h-screen text-slate-100 font-sans">
-    <div class="container mx-auto px-4 py-12 max-w-6xl">
-        <header class="text-center mb-12">
-            <h1 class="text-5xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">DRESS AI</h1>
-            <p class="text-slate-400 mt-2">One Upload. Infinite Styles.</p>
-        </header>
+<body class="bg-slate-900 text-white min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8 text-center text-indigo-400">Dress AI Studio</h1>
+        
+        <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700">
+            <form id="uploadForm" class="space-y-6">
+                <input type="file" id="imageInput" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer" required>
+                
+                <input type="text" id="customStyle" placeholder="Optional: Add a custom style (e.g. Cyberpunk)" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                
+                <button type="submit" id="btn" class="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-bold transition">Generate Lookbook</button>
+            </form>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1 space-y-6">
-                <div class="glass p-8 rounded-3xl shadow-2xl border border-white/10 text-slate-900">
-                    <form id="uploadForm" class="space-y-6">
-                        <div>
-                            <label class="block text-sm font-bold uppercase tracking-wider text-slate-500 mb-4">Upload Portrait</label>
-                            <div class="relative group border-2 border-dashed border-slate-300 rounded-2xl p-4 transition-all hover:border-indigo-500 bg-slate-50">
-                                <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
-                                <div id="previewPlaceholder" class="text-center py-4">
-                                    <span class="text-3xl text-slate-400">📁</span>
-                                    <p class="text-sm text-slate-500 mt-2">Click to select photo</p>
-                                </div>
-                                <img id="imgPreview" class="hidden w-full h-auto rounded-xl shadow-sm">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">Custom Style Add-on</label>
-                            <input type="text" id="customStyle" placeholder="e.g. Cyberpunk, 1920s Jazz" 
-                                   class="w-full bg-white border border-slate-200 p-4 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                        </div>
-
-                        <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-500/20 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
-                            <span>✨ Generate Lookbook</span>
-                        </button>
-                    </form>
-                </div>
+            <div id="loader" class="hidden mt-8 text-center space-y-4">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
+                <p id="statusText" class="text-indigo-300 italic">Starting AI stylists...</p>
             </div>
 
-            <div class="lg:col-span-2">
-                <div id="loader" class="hidden flex flex-col items-center justify-center h-64 glass rounded-3xl border border-white/10">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400 mb-4"></div>
-                    <p class="text-indigo-300 animate-pulse font-medium">Processing Fashion Logic...</p>
-                </div>
-
-                <div id="resultArea" class="gallery-grid">
-                    </div>
+            <div id="zipContainer" class="hidden mt-8 text-center">
+                <a id="zipLink" href="#" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-full font-bold">📦 Download All (.zip)</a>
             </div>
+
+            <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8"></div>
         </div>
     </div>
 
     <script>
-        const imageInput = document.getElementById('imageInput');
-        const imgPreview = document.getElementById('imgPreview');
-        const placeholder = document.getElementById('previewPlaceholder');
-
-        imageInput.onchange = evt => {
-            const [file] = imageInput.files;
-            if (file) {
-                imgPreview.src = URL.createObjectURL(file);
-                imgPreview.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-            }
-        };
-
+        const statuses = ["Analyzing pose...", "Dressing in Casual...", "Crafting Formal...", "Finishing Trendy..."];
+        
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
+            const btn = document.getElementById('btn');
             const loader = document.getElementById('loader');
-            const resultArea = document.getElementById('resultArea');
+            const statusText = document.getElementById('statusText');
+            const gallery = document.getElementById('gallery');
+            const zipContainer = document.getElementById('zipContainer');
 
             btn.disabled = true;
             loader.classList.remove('hidden');
-            resultArea.innerHTML = '';
+            zipContainer.classList.add('hidden');
+            gallery.innerHTML = "";
+
+            let i = 0;
+            const timer = setInterval(() => {
+                statusText.innerText = statuses[i % statuses.length];
+                i++;
+            }, 4000);
 
             const formData = new FormData();
-            formData.append('image', imageInput.files[0]);
+            formData.append('image', document.getElementById('imageInput').files[0]);
             formData.append('custom_style', document.getElementById('customStyle').value);
 
             try {
-                const response = await fetch('/generate', { method: 'POST', body: formData });
-                const data = await response.json();
-
-                if (data.results) {
-                    data.results.forEach(res => {
-                        resultArea.innerHTML += `
-                            <div class="glass p-3 rounded-3xl border border-white/10 group overflow-hidden transition-all hover:scale-[1.03]">
-                                <div class="relative overflow-hidden rounded-2xl">
-                                    <img src="${res.url}" class="w-full h-auto object-cover">
-                                    <div class="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-                                        <p class="text-white font-bold tracking-widest uppercase text-xs">${res.style}</p>
-                                    </div>
-                                </div>
-                                <a href="${res.url}" download class="block text-center mt-3 text-indigo-400 text-xs font-bold hover:text-indigo-300">DOWNLOAD</a>
+                const res = await fetch('/generate', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if(data.results) {
+                    data.results.forEach(item => {
+                        gallery.innerHTML += `
+                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
+                                <img src="${item.url}" class="rounded-lg w-full h-auto">
+                                <p class="text-xs font-bold mt-2 uppercase text-slate-500">${item.style}</p>
                             </div>`;
                     });
+                    document.getElementById('zipLink').href = data.zip_url;
+                    zipContainer.classList.remove('hidden');
                 } else { alert(data.error); }
-            } catch (err) { alert("Server error."); }
+            } catch (err) { alert("Server error"); }
             finally {
+                clearInterval(timer);
                 btn.disabled = false;
                 loader.classList.add('hidden');
             }
