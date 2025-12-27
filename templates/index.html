@@ -2,38 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dress AI | Fashion Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dress AI Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); }
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-8">
+<body class="bg-slate-950 text-white min-h-screen p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold mb-8 text-center text-indigo-400">Dress AI Studio</h1>
+        <h1 class="text-4xl font-black mb-2 text-center bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">DRESS AI</h1>
+        <p class="text-slate-500 text-center mb-10 font-medium">Serverless Fashion Stylist</p>
         
-        <div class="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700">
-            <form id="uploadForm" class="space-y-6">
-                <input type="file" id="imageInput" accept="image/*" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer" required>
+        <div class="glass p-6 md:p-10 rounded-[2.5rem] border border-white/10 shadow-2xl">
+            <form id="uploadForm" class="space-y-8">
+                <div class="relative group cursor-pointer border-2 border-dashed border-white/10 rounded-3xl overflow-hidden bg-slate-900/50 hover:border-indigo-500/50 transition-all">
+                    <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" required>
+                    
+                    <div id="previewPlaceholder" class="p-12 text-center">
+                        <div class="text-4xl mb-4">📸</div>
+                        <p class="text-slate-400 font-bold">Click to upload your photo</p>
+                        <p class="text-slate-600 text-sm mt-1">JPG or PNG (Keep the same pose)</p>
+                    </div>
+
+                    <img id="imgPreview" class="hidden w-full h-auto max-h-[500px] object-contain">
+                </div>
                 
-                <input type="text" id="customStyle" placeholder="Optional: Add a custom style (e.g. Cyberpunk)" class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" id="customStyle" placeholder="Try 'Cyberpunk' or '1920s Gatsby'..." class="w-full p-4 bg-slate-900/80 border border-white/5 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium">
                 
-                <button type="submit" id="btn" class="w-full bg-indigo-600 hover:bg-indigo-700 py-3 rounded-lg font-bold transition">Generate Lookbook</button>
+                <button type="submit" id="btn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 py-4 rounded-2xl font-black text-lg shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50">GENERATE LOOKBOOK</button>
             </form>
 
-            <div id="loader" class="hidden mt-8 text-center space-y-4">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
-                <p id="statusText" class="text-indigo-300 italic">Starting AI stylists...</p>
+            <div id="loader" class="hidden mt-10 text-center space-y-4">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+                <p id="statusText" class="text-indigo-300 font-bold animate-pulse">Initializing Stylists...</p>
             </div>
 
-            <div id="zipContainer" class="hidden mt-8 text-center">
-                <a id="zipLink" href="#" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-full font-bold">📦 Download All (.zip)</a>
+            <div id="zipContainer" class="hidden mt-10 text-center">
+                <a id="zipLink" href="#" class="inline-block bg-emerald-600 hover:bg-emerald-500 px-8 py-3 rounded-full font-black text-sm tracking-widest transition-all">📦 DOWNLOAD ALL (.ZIP)</a>
             </div>
 
-            <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8"></div>
+            <div id="gallery" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10"></div>
         </div>
     </div>
 
     <script>
-        const statuses = ["Analyzing pose...", "Dressing in Casual...", "Crafting Formal...", "Finishing Trendy..."];
-        
+        const imageInput = document.getElementById('imageInput');
+        const imgPreview = document.getElementById('imgPreview');
+        const placeholder = document.getElementById('previewPlaceholder');
+        const statuses = ["Analyzing Pose...", "Applying Casual Look...", "Crafting Formal Style...", "Applying Trendy Fashion..."];
+
+        // Fix the Black Preview Image
+        imageInput.onchange = () => {
+            const [file] = imageInput.files;
+            if (file) {
+                imgPreview.src = URL.createObjectURL(file);
+                imgPreview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            }
+        };
+
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn');
@@ -51,10 +79,10 @@
             const timer = setInterval(() => {
                 statusText.innerText = statuses[i % statuses.length];
                 i++;
-            }, 4000);
+            }, 5000);
 
             const formData = new FormData();
-            formData.append('image', document.getElementById('imageInput').files[0]);
+            formData.append('image', imageInput.files[0]);
             formData.append('custom_style', document.getElementById('customStyle').value);
 
             try {
@@ -64,15 +92,15 @@
                 if(data.results) {
                     data.results.forEach(item => {
                         gallery.innerHTML += `
-                            <div class="bg-slate-900 p-2 rounded-xl border border-slate-700">
-                                <img src="${item.url}" class="rounded-lg w-full h-auto">
-                                <p class="text-xs font-bold mt-2 uppercase text-slate-500">${item.style}</p>
+                            <div class="bg-slate-900/50 p-3 rounded-[2rem] border border-white/5 overflow-hidden">
+                                <img src="${item.url}" class="rounded-2xl w-full h-auto shadow-xl">
+                                <p class="text-[10px] font-black mt-4 uppercase text-slate-500 tracking-widest text-center">${item.style}</p>
                             </div>`;
                     });
                     document.getElementById('zipLink').href = data.zip_url;
                     zipContainer.classList.remove('hidden');
-                } else { alert(data.error); }
-            } catch (err) { alert("Server error"); }
+                } else { alert("AI Error: " + data.error); }
+            } catch (err) { alert("Server connectivity error"); }
             finally {
                 clearInterval(timer);
                 btn.disabled = false;
