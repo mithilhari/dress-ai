@@ -74,21 +74,17 @@ def generate():
                 model='gemini-2.0-flash',
                 contents=[analysis_prompt, input_image]
             )
-            
-            # Step B: Imagen 4.0 generation with dynamic ratio
-            image_res = client.models.generate_images(
-                model='imagen-4.0-generate-001', 
+
+            gen_image = generate_image_with_imagen(
                 prompt=describe_res.text.strip() + ", photorealistic, 8k",
-                config=types.GenerateImagesConfig(
-                    number_of_images=1, 
-                    aspect_ratio=target_ratio
-                )
+                aspect_ratio=target_ratio
             )
+             
 
             if image_res.generated_images:
                 fn = f"{style.lower()}_{secrets.token_hex(4)}.png"
                 path = os.path.join(OUTPUT_DIR, fn)
-                image_res.generated_images[0].image.save(path)
+                gen_image.save(path)
                 results.append({"style": style, "url": f"/static/outputs/{fn}"})
                 file_paths.append(path)
 
@@ -103,6 +99,25 @@ def generate():
 
     except Exception as e:
         return jsonify({"error": f"Vertex AI Error: {str(e)}"}), 500
+
+def generate_image_with_imagen(prompt: str, aspect_ratio: str):
+    """
+    Generate a single image with Imagen 4.0.
+    Returns a PIL.Image object.
+    """
+    image_res = client.models.generate_images(
+        model="imagen-4.0-generate-001",
+        prompt=prompt,
+        config=types.GenerateImagesConfig(
+            number_of_images=1,
+            aspect_ratio=aspect_ratio
+        )
+    )
+
+    if not image_res.generated_images:
+        raise ValueError("Imagen returned no images")
+
+    return image_res.generated_images[0].image
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
