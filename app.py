@@ -81,7 +81,7 @@ def generate():
             )
              
 
-            if image_res.generated_images:
+            if gen_image.generated_images:
                 fn = f"{style.lower()}_{secrets.token_hex(4)}.png"
                 path = os.path.join(OUTPUT_DIR, fn)
                 gen_image.save(path)
